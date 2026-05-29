@@ -1,4 +1,4 @@
-# EdgeProxy 🌐
+# EdgeProxy
 
 Быстрый Edge Serverless прокси на базе Vercel Edge Functions. Позволяет обходить региональные блокировки, проксируя запросы через европейские серверы.
 
@@ -6,27 +6,28 @@
 ![Vercel](https://img.shields.io/badge/Vercel-Edge%20Functions-black)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## ✨ Возможности
+## Возможности
 
-- 🚀 **Edge Serverless** — запросы обрабатываются на Edge-серверах Vercel в Европе
-- ⚡ **Быстрая скорость** — минимальная задержка благодаря Edge Runtime
-- 🔒 **Приватность** — без логирования и отслеживания
-- 🌍 **Обход блокировок** — доступ к заблокированным ресурсам через европейские IP
-- 📡 **Поддержка всех методов** — GET, POST, PUT, DELETE
-- 🔄 **Автоматическое переписывание URL** — корректная работа с относительными ссылками
+- **Edge Serverless** - запросы обрабатываются на Edge-серверах Vercel в Европе (Frankfurt, Paris, Amsterdam)
+- **Быстрая скорость** - минимальная задержка благодаря Edge Runtime
+- **Приватность** - без логирования и отслеживания
+- **Обход блокировок** - доступ к заблокированным ресурсам через европейские IP
+- **Поддержка всех методов** - GET, POST, PUT, DELETE, HEAD
+- **Автоматическое переписывание URL** - корректная работа с относительными ссылками в HTML/CSS
+- **Перехват fetch/XHR** - JavaScript запросы также проходят через прокси
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
 ### Деплой на Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/edge-proxy)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/OinkTechLtd/v0-edge-serverless-proxy)
 
 ### Локальная разработка
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/yourusername/edge-proxy.git
-cd edge-proxy
+git clone https://github.com/OinkTechLtd/v0-edge-serverless-proxy.git
+cd v0-edge-serverless-proxy
 
 # Установка зависимостей
 pnpm install
@@ -37,7 +38,7 @@ pnpm dev
 
 Откройте [http://localhost:3000](http://localhost:3000) в браузере.
 
-## 📖 Использование
+## Использование
 
 ### Через веб-интерфейс
 
@@ -47,14 +48,17 @@ pnpm dev
 
 ### Прямой URL
 
-Формат: `https://your-domain.vercel.app/proxy/{encoded-url}`
+Формат: `https://your-proxy.vercel.app/proxy/{domain}/{path}`
 
 ```
 # Простой домен
-https://your-domain.vercel.app/proxy/example.com
+https://your-proxy.vercel.app/proxy/example.com
 
-# С путём (замените / на -SLASH-)
-https://your-domain.vercel.app/proxy/github.com-SLASH-vercel-SLASH-next.js
+# С путём
+https://your-proxy.vercel.app/proxy/github.com/vercel/next.js
+
+# С query параметрами
+https://your-proxy.vercel.app/proxy/api.site.com/v1/data?key=123
 ```
 
 ### API для разработчиков
@@ -63,10 +67,8 @@ https://your-domain.vercel.app/proxy/github.com-SLASH-vercel-SLASH-next.js
 
 ```javascript
 // Функция для создания прокси URL
-function createProxyUrl(targetUrl, proxyBase = "https://your-domain.vercel.app") {
-  const cleanUrl = targetUrl
-    .replace(/^https?:\/\//, "")
-    .replace(/\//g, "-SLASH-");
+function createProxyUrl(targetUrl, proxyBase = "https://your-proxy.vercel.app") {
+  const cleanUrl = targetUrl.replace(/^https?:\/\//, "");
   return `${proxyBase}/proxy/${cleanUrl}`;
 }
 
@@ -81,9 +83,8 @@ const data = await response.json();
 ```python
 import requests
 
-def create_proxy_url(target_url, proxy_base="https://your-domain.vercel.app"):
+def create_proxy_url(target_url, proxy_base="https://your-proxy.vercel.app"):
     clean_url = target_url.replace("https://", "").replace("http://", "")
-    clean_url = clean_url.replace("/", "-SLASH-")
     return f"{proxy_base}/proxy/{clean_url}"
 
 # Использование
@@ -96,19 +97,19 @@ data = response.json()
 
 ```bash
 # Простой запрос
-curl https://your-domain.vercel.app/proxy/example.com
+curl "https://your-proxy.vercel.app/proxy/example.com"
 
 # С путём
-curl https://your-domain.vercel.app/proxy/api.example.com-SLASH-v1-SLASH-users
+curl "https://your-proxy.vercel.app/proxy/api.example.com/v1/users"
 
 # POST запрос
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"key": "value"}' \
-  https://your-domain.vercel.app/proxy/api.example.com-SLASH-data
+  "https://your-proxy.vercel.app/proxy/api.example.com/data"
 ```
 
-## 🔧 Конфигурация
+## Конфигурация
 
 ### Регионы Edge
 
@@ -120,26 +121,13 @@ export const preferredRegion = ["fra1", "cdg1", "ams1"]
 ```
 
 Доступные регионы:
-- `fra1` — Frankfurt, Germany
-- `cdg1` — Paris, France
-- `ams1` — Amsterdam, Netherlands
-- `lhr1` — London, UK
-- `iad1` — Washington, D.C., USA
-- и другие...
+- `fra1` - Frankfurt, Germany
+- `cdg1` - Paris, France
+- `ams1` - Amsterdam, Netherlands
+- `lhr1` - London, UK
+- `iad1` - Washington, D.C., USA
 
-### Переменные окружения
-
-Опционально можно настроить:
-
-```env
-# Лимит размера запроса (по умолчанию 4MB)
-MAX_REQUEST_SIZE=4194304
-
-# Таймаут запроса в мс (по умолчанию 30000)
-REQUEST_TIMEOUT=30000
-```
-
-## 📁 Структура проекта
+## Структура проекта
 
 ```
 edge-proxy/
@@ -154,35 +142,43 @@ edge-proxy/
 │   └── ui/                   # shadcn/ui компоненты
 ├── lib/
 │   └── utils.ts              # Утилиты
-├── public/                   # Статические файлы
-├── package.json
-├── tailwind.config.ts
 └── README.md
 ```
 
-## ⚠️ Ограничения
+## Как это работает
 
-- **WebSocket** — не поддерживается
-- **Размер ответа** — ограничен настройками Edge Runtime (~4MB)
-- **Cookies** — могут работать некорректно на некоторых сайтах
-- **JavaScript SPA** — могут работать с ограничениями
-- **Некоторые сайты** — могут блокировать прокси-запросы
+1. **Получение запроса** - Edge Function получает запрос с закодированным URL
+2. **Формирование целевого URL** - Путь преобразуется в полный URL целевого сайта
+3. **Проксирование** - Запрос отправляется к целевому серверу из европейского региона
+4. **Обработка ответа**:
+   - HTML: переписываются ссылки, инъектируется скрипт для перехвата fetch/XHR
+   - CSS: переписываются url() ссылки
+   - Другое: передается как есть
+5. **Возврат** - Ответ возвращается клиенту с необходимыми CORS заголовками
 
-## 🛡️ Безопасность
+## Ограничения
+
+- **WebSocket** - не поддерживается
+- **Размер ответа** - ограничен Edge Runtime (~4MB)
+- **Cookies** - привязаны к домену прокси
+- **JavaScript SPA** - могут работать с ограничениями
+- **Некоторые сайты** - могут блокировать прокси-запросы (CloudFlare, Captcha)
+
+## Безопасность
 
 - Прокси не сохраняет логи посещений
 - Все запросы обрабатываются в памяти Edge Runtime
 - CORS заголовки настроены для максимальной совместимости
-- Удаляются потенциально опасные заголовки безопасности
+- Удаляются заголовки X-Frame-Options, CSP для корректной работы
 
-## 📄 Лицензия
+## Лицензия
 
-MIT License — используйте свободно, но ответственно.
+MIT License
 
-## ⚖️ Отказ от ответственности
+## Отказ от ответственности
 
 Этот проект предоставляется "как есть" без каких-либо гарантий. Используйте его ответственно и в соответствии с законодательством вашей страны. Авторы не несут ответственности за любое незаконное использование данного программного обеспечения.
 
 ---
 
-Сделано с ❤️ используя [Next.js](https://nextjs.org), [Vercel Edge Functions](https://vercel.com/features/edge-functions) и [shadcn/ui](https://ui.shadcn.com)
+Сделано с использованием [Next.js](https://nextjs.org), [Vercel Edge Functions](https://vercel.com/features/edge-functions) и [shadcn/ui](https://ui.shadcn.com)

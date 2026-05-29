@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,14 +9,16 @@ import { Globe, Shield, Zap, Copy, Check, ArrowRight, Server, Code, BookOpen } f
 export default function ProxyLandingPage() {
   const [url, setUrl] = useState("")
   const [copied, setCopied] = useState<string | null>(null)
+  const [baseUrl, setBaseUrl] = useState("")
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://your-domain.vercel.app"
+  useEffect(() => {
+    setBaseUrl(window.location.origin)
+  }, [])
 
   const generateProxyUrl = (targetUrl: string) => {
-    if (!targetUrl) return ""
-    const cleanUrl = targetUrl
-      .replace(/^https?:\/\//, "")
-      .replace(/\//g, "-SLASH-")
+    if (!targetUrl || !baseUrl) return ""
+    // Remove protocol if present
+    let cleanUrl = targetUrl.replace(/^https?:\/\//, "")
     return `${baseUrl}/proxy/${cleanUrl}`
   }
 
@@ -31,7 +33,7 @@ export default function ProxyLandingPage() {
   const examples = [
     { name: "Lovable App", url: "flexai-ru.lovable.app" },
     { name: "GitHub", url: "github.com" },
-    { name: "Vercel Docs", url: "vercel.com/docs" },
+    { name: "RuTube", url: "rutube.ru" },
   ]
 
   return (
@@ -51,7 +53,7 @@ export default function ProxyLandingPage() {
               API
             </a>
             <a 
-              href="https://github.com" 
+              href="https://github.com/OinkTechLtd/v0-edge-serverless-proxy" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -70,11 +72,11 @@ export default function ProxyLandingPage() {
               <Zap className="h-4 w-4" />
               Edge Serverless Proxy
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-balance">
               Открывайте любые сайты
               <span className="text-primary"> без ограничений</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto text-pretty">
               Быстрый Edge-прокси работающий через европейские серверы Vercel. 
               Обходите блокировки и получайте доступ к любым ресурсам.
             </p>
@@ -97,7 +99,7 @@ export default function ProxyLandingPage() {
                   />
                   <Button 
                     onClick={() => url && window.open(proxyUrl, "_blank")}
-                    disabled={!url}
+                    disabled={!url || !baseUrl}
                   >
                     Открыть
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -197,26 +199,12 @@ export default function ProxyLandingPage() {
                   <div className="space-y-3">
                     <h4 className="font-semibold">Способ 2: Прямой URL</h4>
                     <p className="text-muted-foreground">
-                      Добавьте домен сайта после <code className="bg-muted px-1.5 py-0.5 rounded">/proxy/</code>:
-                    </p>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <code className="text-sm">{baseUrl}/proxy/example.com</code>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Для страниц с путями</h4>
-                    <p className="text-muted-foreground">
-                      Замените <code className="bg-muted px-1.5 py-0.5 rounded">/</code> на <code className="bg-muted px-1.5 py-0.5 rounded">-SLASH-</code>:
+                      Добавьте домен и путь сайта после <code className="bg-muted px-1.5 py-0.5 rounded">/proxy/</code>:
                     </p>
                     <div className="bg-muted p-3 rounded-lg space-y-2">
-                      <div>
-                        <span className="text-muted-foreground text-sm">Оригинал:</span>
-                        <code className="text-sm ml-2">github.com/vercel/next.js</code>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground text-sm">Прокси:</span>
-                        <code className="text-sm ml-2">{baseUrl}/proxy/github.com-SLASH-vercel-SLASH-next.js</code>
-                      </div>
+                      <code className="text-sm block">/proxy/example.com</code>
+                      <code className="text-sm block">/proxy/github.com/vercel/next.js</code>
+                      <code className="text-sm block">/proxy/api.site.com/v1/data?key=123</code>
                     </div>
                   </div>
                 </CardContent>
@@ -230,7 +218,7 @@ export default function ProxyLandingPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {examples.map((example) => {
-                      const exampleProxyUrl = `${baseUrl}/proxy/${example.url.replace(/\//g, "-SLASH-")}`
+                      const exampleProxyUrl = baseUrl ? `${baseUrl}/proxy/${example.url}` : `/proxy/${example.url}`
                       return (
                         <div key={example.url} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <div>
@@ -277,14 +265,16 @@ export default function ProxyLandingPage() {
                     <h4 className="font-semibold">Формат запроса</h4>
                     <div className="bg-zinc-950 text-zinc-50 p-4 rounded-lg overflow-x-auto">
                       <pre className="text-sm">
-{`GET /proxy/{encoded-url}
+{`GET /proxy/{domain}/{path}
 
 Параметры:
-  {encoded-url} - URL сайта с заменой / на -SLASH-
+  {domain} - Домен целевого сайта
+  {path}   - Путь на сайте (опционально)
 
 Примеры:
   /proxy/example.com
-  /proxy/api.example.com-SLASH-v1-SLASH-data`}
+  /proxy/api.example.com/v1/users
+  /proxy/site.com/page?param=value`}
                       </pre>
                     </div>
                   </div>
@@ -293,32 +283,41 @@ export default function ProxyLandingPage() {
                     <div className="bg-zinc-950 text-zinc-50 p-4 rounded-lg overflow-x-auto">
                       <pre className="text-sm">
 {`// Функция для создания прокси URL
-function createProxyUrl(targetUrl) {
-  const baseUrl = "${baseUrl}";
-  const cleanUrl = targetUrl
-    .replace(/^https?:\\/\\//, "")
-    .replace(/\\//g, "-SLASH-");
-  return \`\${baseUrl}/proxy/\${cleanUrl}\`;
+function createProxyUrl(targetUrl, proxyBase) {
+  const cleanUrl = targetUrl.replace(/^https?:\\/\\//, "");
+  return \`\${proxyBase}/proxy/\${cleanUrl}\`;
 }
 
 // Использование
-const proxyUrl = createProxyUrl("https://api.example.com/data");
+const proxyUrl = createProxyUrl(
+  "https://api.example.com/data",
+  "https://your-proxy.vercel.app"
+);
+
 const response = await fetch(proxyUrl);
 const data = await response.json();`}
                       </pre>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <h4 className="font-semibold">Заголовки</h4>
+                    <h4 className="font-semibold">cURL</h4>
+                    <div className="bg-zinc-950 text-zinc-50 p-4 rounded-lg overflow-x-auto">
+                      <pre className="text-sm">
+{`curl "https://your-proxy.vercel.app/proxy/api.example.com/users"
+
+# С POST запросом
+curl -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"test"}' \\
+  "https://your-proxy.vercel.app/proxy/api.example.com/users"`}
+                      </pre>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="font-semibold">Поддерживаемые методы</h4>
                     <p className="text-muted-foreground">
-                      Прокси автоматически пробрасывает большинство заголовков, включая:
+                      GET, POST, PUT, DELETE, HEAD, OPTIONS
                     </p>
-                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                      <li>Content-Type</li>
-                      <li>Authorization</li>
-                      <li>Accept</li>
-                      <li>User-Agent</li>
-                    </ul>
                   </div>
                 </CardContent>
               </Card>
@@ -332,9 +331,9 @@ const data = await response.json();`}
                   <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                     <li>Некоторые сайты могут блокировать прокси-запросы</li>
                     <li>WebSocket соединения не поддерживаются</li>
-                    <li>Максимальный размер ответа ограничен настройками Edge Runtime</li>
-                    <li>Cookies могут работать некорректно на некоторых сайтах</li>
-                    <li>JavaScript-heavy SPA могут работать с ограничениями</li>
+                    <li>Максимальный размер ответа ограничен Edge Runtime (около 4MB)</li>
+                    <li>Cookies привязаны к домену прокси, не оригинального сайта</li>
+                    <li>JavaScript SPA с динамической загрузкой могут работать некорректно</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -346,7 +345,7 @@ const data = await response.json();`}
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 px-4">
         <div className="container mx-auto text-center text-muted-foreground">
-          <p>EdgeProxy — бесплатный Edge Serverless прокси на базе Vercel</p>
+          <p>EdgeProxy - бесплатный Edge Serverless прокси на базе Vercel</p>
           <p className="text-sm mt-2">
             Используйте ответственно. Не предназначен для незаконной деятельности.
           </p>
